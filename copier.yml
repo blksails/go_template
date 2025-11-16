@@ -132,7 +132,6 @@ _subdirectory: "."
 _exclude:
   - "{% if not enable_terraform %}.deploy/terraform{% endif %}"
   - "{% if not enable_makefile %}.deploy/Makefile{% endif %}"
-  - "{% if not enable_github_actions %}.github{% endif %}"
   - ".git"
   - "*.pyc"
   - "__pycache__"
