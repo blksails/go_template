@@ -35,8 +35,8 @@ jobs:
 {% if enable_private_repos -%}
       - name: Setup private repo access
         run: |
-          git config --global url."https://${{ secrets.GH_TOKEN }}@github.com/".insteadOf "https://github.com/"
-          echo "machine pkg.blksails.net login ${{ secrets.NETRC_LOGIN }} password ${{ secrets.NETRC_PASSWORD }}" > ~/.netrc
+{% raw %}          git config --global url."https://${{ secrets.GH_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          echo "machine pkg.blksails.net login ${{ secrets.NETRC_LOGIN }} password ${{ secrets.NETRC_PASSWORD }}" > ~/.netrc{% endraw %}
           chmod 600 ~/.netrc
 
 {% endif -%}
@@ -77,8 +77,8 @@ jobs:
 {% if enable_private_repos -%}
       - name: Setup private repo access
         run: |
-          git config --global url."https://${{ secrets.GH_TOKEN }}@github.com/".insteadOf "https://github.com/"
-          echo "machine pkg.blksails.net login ${{ secrets.NETRC_LOGIN }} password ${{ secrets.NETRC_PASSWORD }}" > ~/.netrc
+{% raw %}          git config --global url."https://${{ secrets.GH_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          echo "machine pkg.blksails.net login ${{ secrets.NETRC_LOGIN }} password ${{ secrets.NETRC_PASSWORD }}" > ~/.netrc{% endraw %}
           chmod 600 ~/.netrc
 
 {% endif -%}
@@ -103,7 +103,7 @@ jobs:
 {% if enable_private_repos -%}
       - name: Setup private repo access for Docker
         run: |
-          echo "machine pkg.blksails.net login ${{ secrets.NETRC_LOGIN }} password ${{ secrets.NETRC_PASSWORD }}" > ~/.netrc
+{% raw %}          echo "machine pkg.blksails.net login ${{ secrets.NETRC_LOGIN }} password ${{ secrets.NETRC_PASSWORD }}" > ~/.netrc{% endraw %}
           chmod 600 ~/.netrc
 
 {% endif -%}
@@ -113,9 +113,9 @@ jobs:
       - name: Log in to Alibaba Cloud Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+{% raw %}          registry: ${{ env.REGISTRY }}
           username: ${{ secrets.ALIYUN_REGISTRY_USERNAME }}
-          password: ${{ secrets.ALIYUN_REGISTRY_PASSWORD }}
+          password: ${{ secrets.ALIYUN_REGISTRY_PASSWORD }}{% endraw %}
 
       - name: Extract metadata
         id: meta
@@ -131,12 +131,12 @@ jobs:
             VERSION=${GITHUB_SHA::8}
           fi
 
-          IMAGE_TAG="${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:${VERSION}"
+{% raw %}          IMAGE_TAG="${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:${VERSION}"
           LATEST_TAG="${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:latest"
 
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "tags=${IMAGE_TAG}" >> $GITHUB_OUTPUT
-          echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
+          echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT{% endraw %}
 
           echo "Building image with tags:"
           echo "  - ${IMAGE_TAG}"
@@ -152,17 +152,17 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ steps.meta.outputs.tags }}
-            ${{ github.ref == 'refs/heads/main' && steps.meta.outputs.latest_tag || '' }}
+{% raw %}            ${{ steps.meta.outputs.tags }}
+            ${{ github.ref == 'refs/heads/main' && steps.meta.outputs.latest_tag || '' }}{% endraw %}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 {% if enable_private_repos -%}
           secrets: |
-            netrc=${{ secrets.NETRC_FILE }}
+{% raw %}            netrc=${{ secrets.NETRC_FILE }}{% endraw %}
 {% endif -%}
 
       - name: Image digest
-        run: echo "Image pushed successfully with tag ${{ steps.meta.outputs.version }}"
+        run: {% raw %}echo "Image pushed successfully with tag ${{ steps.meta.outputs.version }}"{% endraw %}
 
   deploy-notification:
     name: Deployment Notification
@@ -173,5 +173,5 @@ jobs:
       - name: Send notification
         run: |
           echo "🚀 Image built and pushed successfully!"
-          echo "📦 Image: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}"
+{% raw %}          echo "📦 Image: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}"{% endraw %}
           echo "✅ Ready for SAE deployment"
