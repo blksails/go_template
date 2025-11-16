@@ -29,7 +29,7 @@ pip install copier
 
 ```bash
 cd /path/to/your/go/project
-copier copy gh:blksails/deploy_templates/go .
+copier copy gh:blksails/go_template .
 ```
 
 回答交互式问题（应用名、Go 版本、SAE 配置等）
@@ -330,11 +330,11 @@ Copier 会记住你的配置，只提示新的或修改的问题。
 
 ## 🌐 GitHub 仓库
 
-模板托管在：https://github.com/blksails/deploy_templates
+模板托管在：https://github.com/blksails/go_template
 
 使用 GitHub 引用：
 ```bash
-copier copy gh:blksails/deploy_templates/go /path/to/project
+copier copy gh:blksails/go_template /path/to/project
 ```
 
 ## 📚 技术栈
