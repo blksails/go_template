@@ -1,0 +1,19 @@
+#!/bin/bash
+# Local run script for {{ app_name }}
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DEPLOY_DIR="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$DEPLOY_DIR")"
+
+cd "$PROJECT_ROOT"
+
+# Check if binary exists
+if [ ! -f "./{{ app_name }}" ]; then
+    echo "📦 Binary not found, building first..."
+    bash "$DEPLOY_DIR/scripts/build.sh"
+fi
+
+echo "🚀 Running {{ app_name }}..."
+./{{ app_name }} serve
+

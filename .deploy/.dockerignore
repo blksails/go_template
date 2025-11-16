@@ -1,0 +1,55 @@
+# Git files
+.git
+.gitignore
+
+# Documentation
+*.md
+docs/
+LICENSE
+
+# Binaries and build artifacts
+{{ app_name }}
+tmp/
+bin/
+*.test
+*.out
+coverage.out
+coverage.html
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Terraform files
+*.tf
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
+# Config files (keep only samples)
+*.yaml
+*.yml
+configs/*
+!configs/sample-*.yaml
+
+# Scripts
+scripts/
+
+# Test files (optional - uncomment to exclude)
+# *_test.go
+
+# Temporary files
+tmp/
+
+# CI/CD files
+.github/
+.gitlab-ci.yml
+

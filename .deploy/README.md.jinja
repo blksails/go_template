@@ -1,0 +1,176 @@
+# {{ app_name | title }} Deployment
+
+此目录包含 {{ app_name }} 的所有部署配置和脚本。
+
+## 📁 目录结构
+
+```
+.deploy/
+├── Dockerfile              # Docker 构建文件
+├── .dockerignore          # Docker 忽略规则
+├── Makefile               # Make 命令（可选）
+├── .github/
+│   └── workflows/
+│       └── build-and-deploy.yml  # CI/CD 流水线
+├── terraform/             # Terraform IaC（可选）
+│   ├── terraform.tf
+│   └── main.tf
+└── scripts/               # 便捷脚本
+    ├── build.sh           # 构建二进制
+    ├── run.sh             # 本地运行
+    ├── docker-build.sh    # Docker 构建
+    ├── docker-push.sh     # Docker 推送
+    └── deploy.sh          # Terraform 部署
+```
+
+## 🚀 快速使用
+
+### 方式一：使用脚本（推荐）
+
+```bash
+# 构建二进制
+.deploy/scripts/build.sh
+
+# 本地运行
+.deploy/scripts/run.sh
+
+# Docker 构建
+.deploy/scripts/docker-build.sh
+
+# Docker 推送
+TAG=v1.0.0 .deploy/scripts/docker-push.sh
+
+# Terraform 部署
+.deploy/scripts/deploy.sh init
+.deploy/scripts/deploy.sh plan
+.deploy/scripts/deploy.sh apply
+```
+
+### 方式二：使用 Makefile
+
+```bash
+cd .deploy
+
+# 开发
+make build
+make run
+make test
+
+# Docker
+make docker-build
+make docker-push
+
+# Terraform
+make terraform-init
+make terraform-plan
+make terraform-apply
+```
+
+## ⚙️ 配置
+
+主配置文件位于项目根目录：`../.deploy.yml`
+
+修改配置后，更新相关文件：
+```bash
+# 在项目根目录
+copier update
+```
+
+## 🔧 GitHub Actions
+
+### 启用 CI/CD
+
+使用便捷脚本启用 GitHub Actions：
+
+```bash
+.deploy/scripts/enable-github-actions.sh
+```
+
+选择创建符号链接或复制文件到项目根目录。
+
+### 禁用 CI/CD
+
+```bash
+.deploy/scripts/disable-github-actions.sh
+```
+
+## 📝 GitHub Secrets
+
+需要在 GitHub 仓库设置中配置：
+
+- `ALIYUN_REGISTRY_USERNAME` - 阿里云容器镜像服务用户名
+- `ALIYUN_REGISTRY_PASSWORD` - 阿里云容器镜像服务密码
+{% if enable_private_repos -%}
+- `GH_TOKEN` - GitHub Personal Access Token
+- `NETRC_LOGIN` - 私有包仓库登录
+- `NETRC_PASSWORD` - 私有包仓库密码
+- `NETRC_FILE` - .netrc 文件内容（base64）
+{% endif -%}
+
+## 🏗️ Terraform 部署
+
+{% if enable_terraform -%}
+```bash
+cd terraform
+
+# 初始化
+terraform init
+
+# 查看计划
+terraform plan{% if use_database %} -var="database_url=$DATABASE_URL"{% endif %}{% if use_redis %} -var="redis_url=$REDIS_URL"{% endif %}
+
+# 应用部署
+terraform apply{% if use_database %} -var="database_url=$DATABASE_URL"{% endif %}{% if use_redis %} -var="redis_url=$REDIS_URL"{% endif %}
+```
+{% else -%}
+Terraform 未启用。要启用，运行：
+```bash
+copier update
+```
+{% endif -%}
+
+## 🐳 Docker 构建说明
+
+构建上下文是项目根目录，所以从 `.deploy/` 目录构建时需要：
+
+```bash
+cd ..  # 回到项目根目录
+docker build -f .deploy/Dockerfile -t {{ app_name }}:latest .
+```
+
+脚本已自动处理路径问题。
+
+## 📊 健康检查
+
+应用必须实现健康检查端点：`{{ health_check_path }}`
+
+示例：
+```go
+http.HandleFunc("{{ health_check_path }}", func(w http.ResponseWriter, r *http.Request) {
+    w.WriteHeader(http.StatusOK)
+    w.Write([]byte("OK"))
+})
+```
+
+## 🔍 故障排查
+
+### Docker 构建失败
+- 确保在项目根目录有 `go.mod` 和 `go.sum`
+- 检查 `.deploy/.dockerignore` 没有排除必要文件
+
+### 脚本执行失败
+- 确保脚本有执行权限：`chmod +x .deploy/scripts/*.sh`
+- 检查路径是否正确
+
+### CI/CD 失败
+- 验证 GitHub Secrets 配置
+- 检查 `.github/workflows/` 文件是否存在
+- 查看 GitHub Actions 日志
+
+## 📚 更多信息
+
+查看项目根目录的文档或访问：
+- [Aliyun SAE](https://www.aliyun.com/product/sae)
+- [Docker 文档](https://docs.docker.com/)
+- [Terraform 文档](https://www.terraform.io/)
+

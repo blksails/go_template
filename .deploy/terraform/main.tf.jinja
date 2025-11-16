@@ -1,0 +1,115 @@
+variable "region" {
+  default = "{{ aliyun_region }}"
+}
+
+variable "app_name" {
+  default = "{{ app_name }}"
+}
+
+variable "image_tag" {
+  default = "latest"
+}
+
+{% if use_database -%}
+variable "database_url" {
+  type      = string
+  sensitive = true
+}
+
+{% endif -%}
+{% if use_redis -%}
+variable "redis_url" {
+  type      = string
+  sensitive = true
+}
+
+{% endif -%}
+provider "alicloud" {
+  region = var.region
+}
+
+# SAE Namespace
+resource "alicloud_sae_namespace" "{{ app_name }}" {
+  namespace_id          = "${var.region}:{{ app_name }}"
+  namespace_name        = "{{ app_name }}-production"
+  namespace_description = "{{ app_name | title }} Service Production Environment"
+}
+
+# SAE Application
+resource "alicloud_sae_application" "{{ app_name }}" {
+  app_name        = var.app_name
+  namespace_id    = alicloud_sae_namespace.{{ app_name }}.id
+  package_type    = "Image"
+  image_url       = "{{ aliyun_registry }}/{{ aliyun_namespace }}/${var.app_name}:${var.image_tag}"
+  app_description = "{{ app_name | title }} Service"
+  replicas        = {{ sae_replicas }}
+  cpu             = {{ sae_cpu }}
+  memory          = {{ sae_memory }}
+
+  # Health check
+  readiness_v2 {
+    exec {
+      command = ["wget", "-q", "-O", "-", "http://localhost:{{ service_port }}{{ health_check_path }}"]
+    }
+    initial_delay_seconds = 10
+    period_seconds        = 10
+    timeout_seconds       = 3
+  }
+
+  liveness_v2 {
+    exec {
+      command = ["wget", "-q", "-O", "-", "http://localhost:{{ service_port }}{{ health_check_path }}"]
+    }
+    initial_delay_seconds = 30
+    period_seconds        = 30
+    timeout_seconds       = 3
+  }
+
+  # Environment variables
+  envs = jsonencode([
+{% if use_database -%}
+    {
+      name  = "DATABASE_URL"
+      value = var.database_url
+    },
+{% endif -%}
+{% if use_redis -%}
+    {
+      name  = "REDIS_URL"
+      value = var.redis_url
+    },
+{% endif -%}
+    {
+      name  = "LOG_LEVEL"
+      value = "info"
+    },
+    {
+      name  = "GIN_MODE"
+      value = "release"
+    },
+    {
+      name  = "TZ"
+      value = "Asia/Shanghai"
+    }
+  ])
+
+  # Auto-scaling configuration
+  auto_config                          = true
+  auto_enable_application_scaling_rule = true
+  min_ready_instances                  = 1
+
+  # VPC configuration (optional, configure as needed)
+  # vpc_id            = "vpc-xxx"
+  # vswitch_id        = "vsw-xxx"
+  # security_group_id = "sg-xxx"
+}
+
+# Outputs
+output "sae_application_id" {
+  value = alicloud_sae_application.{{ app_name }}.id
+}
+
+output "sae_application_url" {
+  value = "http://${alicloud_sae_application.{{ app_name }}.app_name}.sae.aliyun.com"
+}
+

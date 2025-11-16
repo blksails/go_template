@@ -1,0 +1,143 @@
+# Copier template configuration for Go SAE deployment
+_min_copier_version: "9.0.0"
+
+# Template metadata
+_metadata:
+  template_name: "Go SAE Deployment Template"
+  description: "Deploy Go applications to Aliyun SAE with GitHub Actions and Terraform"
+  version: "1.0.0"
+
+# Questions and variables
+app_name:
+  type: str
+  help: "Application name (will be used for binary, image, SAE app)"
+  placeholder: "myapp"
+  validator: "{% if not app_name.replace('-', '').replace('_', '').isalnum() %}Invalid app name{% endif %}"
+
+go_version:
+  type: str
+  help: "Go version to use"
+  default: "1.23.3"
+  validator: "{% if not go_version %}Go version is required{% endif %}"
+
+service_port:
+  type: int
+  help: "Service port for the application"
+  default: 8080
+  validator: "{% if service_port < 1 or service_port > 65535 %}Port must be between 1-65535{% endif %}"
+
+health_check_path:
+  type: str
+  help: "Health check endpoint path"
+  default: "/healthz"
+
+# Aliyun configuration
+aliyun_registry:
+  type: str
+  help: "Aliyun Container Registry endpoint"
+  default: "registry.cn-hangzhou.aliyuncs.com"
+
+aliyun_namespace:
+  type: str
+  help: "Aliyun Container Registry namespace"
+  default: "blksails"
+
+aliyun_region:
+  type: str
+  help: "Aliyun region for SAE deployment"
+  default: "cn-hangzhou"
+  choices:
+    - "cn-hangzhou"
+    - "cn-shanghai"
+    - "cn-beijing"
+    - "cn-shenzhen"
+
+# SAE application configuration
+sae_replicas:
+  type: int
+  help: "Number of SAE application replicas"
+  default: 2
+  validator: "{% if sae_replicas < 1 %}At least 1 replica required{% endif %}"
+
+sae_cpu:
+  type: int
+  help: "CPU limit per instance (in millicores, e.g., 1000 = 1 core)"
+  default: 1000
+  choices:
+    - 500
+    - 1000
+    - 2000
+    - 4000
+
+sae_memory:
+  type: int
+  help: "Memory limit per instance (in MB)"
+  default: 2048
+  choices:
+    - 512
+    - 1024
+    - 2048
+    - 4096
+    - 8192
+
+# Optional features
+enable_terraform:
+  type: bool
+  help: "Include Terraform configuration for SAE deployment?"
+  default: true
+
+enable_makefile:
+  type: bool
+  help: "Include Makefile with common commands?"
+  default: true
+
+enable_tests:
+  type: bool
+  help: "Enable test step in GitHub Actions?"
+  default: true
+
+enable_private_repos:
+  type: bool
+  help: "Enable private repository access (requires GitHub secrets)?"
+  default: false
+
+enable_github_actions:
+  type: bool
+  help: "Auto-enable GitHub Actions in project root?"
+  default: false
+
+# Database configuration (optional)
+use_database:
+  type: bool
+  help: "Will this application use a database?"
+  default: false
+
+use_redis:
+  type: bool
+  help: "Will this application use Redis?"
+  default: false
+
+# Advanced configuration
+docker_base_image:
+  type: str
+  help: "Docker base image for runtime"
+  default: "alpine:latest"
+  when: "{{ False }}" # Hidden advanced option
+
+# Computed values (not asked, derived from other variables)
+_templates_suffix: jinja
+_subdirectory: "."
+
+# Exclude patterns - conditionally exclude files based on user choices
+_exclude:
+  - "{% if not enable_terraform %}.deploy/terraform{% endif %}"
+  - "{% if not enable_makefile %}.deploy/Makefile{% endif %}"
+  - "{% if not enable_github_actions %}.github{% endif %}"
+  - ".git"
+  - "*.pyc"
+  - "__pycache__"
+  - ".copier-answers.yml"
+  - ".DS_Store"
+  - "validate-template.sh"
+  - "README.md"
+  - "CHANGES.md"

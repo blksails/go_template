@@ -1,0 +1,31 @@
+#!/bin/bash
+# Docker build script for {{ app_name }}
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DEPLOY_DIR="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$DEPLOY_DIR")"
+
+# Default values
+REGISTRY="{{ aliyun_registry }}"
+NAMESPACE="{{ aliyun_namespace }}"
+IMAGE_NAME="{{ app_name }}"
+TAG="${TAG:-latest}"
+
+IMAGE_FULL="${REGISTRY}/${NAMESPACE}/${IMAGE_NAME}:${TAG}"
+
+echo "🐳 Building Docker image..."
+echo "📦 Image: ${IMAGE_FULL}"
+echo ""
+
+cd "$PROJECT_ROOT"
+
+docker build \
+    -f .deploy/Dockerfile \
+    -t "${IMAGE_FULL}" \
+    .
+
+echo ""
+echo "✅ Docker image built successfully!"
+echo "🏷️  Tag: ${IMAGE_FULL}"
+

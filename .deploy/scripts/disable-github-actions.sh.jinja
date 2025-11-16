@@ -1,0 +1,53 @@
+#!/bin/bash
+# Disable GitHub Actions workflow for {{ app_name }}
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DEPLOY_DIR="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$DEPLOY_DIR")"
+
+WORKFLOW_TARGET="$PROJECT_ROOT/.github/workflows/build-and-deploy.yml"
+
+echo "🔧 Disabling GitHub Actions for {{ app_name }}..."
+echo ""
+
+# Check if workflow exists
+if [ ! -f "$WORKFLOW_TARGET" ] && [ ! -L "$WORKFLOW_TARGET" ]; then
+    echo "ℹ️  GitHub Actions workflow is not enabled"
+    echo "   File not found: $WORKFLOW_TARGET"
+    exit 0
+fi
+
+# Confirm removal
+echo "⚠️  This will remove:"
+echo "   $WORKFLOW_TARGET"
+echo ""
+read -p "Are you sure? (y/N): " -n 1 -r
+echo
+
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "❌ Cancelled"
+    exit 0
+fi
+
+# Remove workflow file
+rm -f "$WORKFLOW_TARGET"
+
+# Remove empty directories
+if [ -d "$PROJECT_ROOT/.github/workflows" ] && [ -z "$(ls -A "$PROJECT_ROOT/.github/workflows")" ]; then
+    rmdir "$PROJECT_ROOT/.github/workflows"
+    echo "📁 Removed empty directory: .github/workflows"
+fi
+
+if [ -d "$PROJECT_ROOT/.github" ] && [ -z "$(ls -A "$PROJECT_ROOT/.github")" ]; then
+    rmdir "$PROJECT_ROOT/.github"
+    echo "📁 Removed empty directory: .github"
+fi
+
+echo ""
+echo "✅ GitHub Actions disabled!"
+echo ""
+echo "💡 The workflow file remains in .deploy/.github/workflows/"
+echo "   You can re-enable it anytime by running:"
+echo "   .deploy/scripts/enable-github-actions.sh"
+

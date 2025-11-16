@@ -1,0 +1,67 @@
+# Multi-stage build - Build stage
+FROM golang:{{ go_version }}-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates tzdata
+
+WORKDIR /build
+
+# Set Go environment variables
+ENV GO111MODULE=on \
+    CGO_ENABLED=0 \
+    GOOS=linux \
+    GOARCH=amd64
+
+# Copy go.mod and go.sum first to leverage Docker cache
+COPY go.mod go.sum ./
+
+# Download dependencies
+{% if enable_private_repos -%}
+# For private repositories, mount .netrc secret
+RUN --mount=type=secret,id=netrc,target=/root/.netrc \
+    go mod download
+{% else -%}
+RUN go mod download
+{% endif -%}
+
+# Copy source code
+COPY . .
+
+# Build binary
+RUN go build -ldflags="-s -w" -o {{ app_name }} .
+
+# Runtime stage - Use smaller base image
+FROM {{ docker_base_image }}
+
+# Install runtime dependencies
+RUN apk --no-cache add ca-certificates tzdata wget
+
+# Set timezone to Shanghai
+ENV TZ=Asia/Shanghai
+
+WORKDIR /app
+
+# Copy binary from build stage
+COPY --from=builder /build/{{ app_name }} .
+
+# Copy config files if they exist (optional)
+COPY --from=builder /build/configs ./configs 2>/dev/null || true
+
+# Create non-root user
+RUN addgroup -g 1000 app && \
+    adduser -D -u 1000 -G app app && \
+    chown -R app:app /app
+
+USER app
+
+# Expose port
+EXPOSE {{ service_port }}
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:{{ service_port }}{{ health_check_path }} || exit 1
+
+# Default command
+ENTRYPOINT ["/app/{{ app_name }}"]
+CMD ["serve"]
+

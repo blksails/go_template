@@ -1,0 +1,110 @@
+.PHONY: help build run test clean docker-build docker-run docker-push{% if enable_terraform %} terraform-init terraform-plan terraform-apply terraform-destroy{% endif %}
+
+.DEFAULT_GOAL := help
+
+# Directories
+PROJECT_ROOT := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+DEPLOY_DIR := $(PROJECT_ROOT)
+
+# Variables
+APP_NAME := {{ app_name }}
+GO_VERSION := {{ go_version }}
+REGISTRY := {{ aliyun_registry }}
+NAMESPACE := {{ aliyun_namespace }}
+IMAGE_TAG ?= latest
+IMAGE_NAME := $(REGISTRY)/$(NAMESPACE)/$(APP_NAME):$(IMAGE_TAG)
+
+help:
+	@echo "{{ app_name | title }} - Makefile Commands"
+	@echo ""
+	@echo "Development:"
+	@echo "  make build         - Build the Go binary"
+	@echo "  make run           - Run the application locally"
+	@echo "  make test          - Run tests"
+	@echo "  make clean         - Clean build artifacts"
+	@echo ""
+	@echo "Docker:"
+	@echo "  make docker-build  - Build Docker image"
+	@echo "  make docker-run    - Run Docker container locally"
+	@echo "  make docker-push   - Push Docker image to registry"
+	@echo ""
+{% if enable_terraform -%}
+	@echo "Terraform:"
+	@echo "  make terraform-init    - Initialize Terraform"
+	@echo "  make terraform-plan    - Plan Terraform changes"
+	@echo "  make terraform-apply   - Apply Terraform changes"
+	@echo "  make terraform-destroy - Destroy Terraform resources"
+	@echo ""
+{% endif -%}
+
+# ====================================
+# Development Commands
+# ====================================
+
+build:
+	@echo "🏗️  Building $(APP_NAME)..."
+	cd .. && go build -ldflags="-s -w" -o $(APP_NAME) .
+
+run: build
+	@echo "🚀 Running $(APP_NAME)..."
+	cd .. && ./$(APP_NAME) serve
+
+test:
+	@echo "🧪 Running tests..."
+	cd .. && go test -v -race -coverprofile=coverage.out ./...
+	cd .. && go tool cover -html=coverage.out -o coverage.html
+	@echo "✅ Coverage report: coverage.html"
+
+clean:
+	@echo "🧹 Cleaning..."
+	cd .. && rm -f $(APP_NAME)
+	cd .. && rm -f coverage.out coverage.html
+	@echo "✅ Clean complete"
+
+# ====================================
+# Docker Commands
+# ====================================
+
+docker-build:
+	@echo "🐳 Building Docker image..."
+	cd .. && docker build -f .deploy/Dockerfile -t $(IMAGE_NAME) .
+	@echo "✅ Image built: $(IMAGE_NAME)"
+
+docker-run:
+	@echo "🐳 Running Docker container..."
+	docker run --rm -p {{ service_port }}:{{ service_port }} \
+{% if use_database -%}
+		-e DATABASE_URL="$(DATABASE_URL)" \
+{% endif -%}
+{% if use_redis -%}
+		-e REDIS_URL="$(REDIS_URL)" \
+{% endif -%}
+		$(IMAGE_NAME)
+
+docker-push:
+	@echo "🐳 Pushing Docker image..."
+	docker push $(IMAGE_NAME)
+	@echo "✅ Image pushed: $(IMAGE_NAME)"
+
+{% if enable_terraform -%}
+# ====================================
+# Terraform Commands
+# ====================================
+
+terraform-init:
+	@echo "🔧 Initializing Terraform..."
+	cd terraform && terraform init
+
+terraform-plan:
+	@echo "📋 Planning Terraform changes..."
+	cd terraform && terraform plan
+
+terraform-apply:
+	@echo "🚀 Applying Terraform changes..."
+	cd terraform && terraform apply
+
+terraform-destroy:
+	@echo "💥 Destroying Terraform resources..."
+	cd terraform && terraform destroy
+{% endif -%}
+

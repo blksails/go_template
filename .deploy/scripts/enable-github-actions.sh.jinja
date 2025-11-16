@@ -1,0 +1,77 @@
+#!/bin/bash
+# Enable GitHub Actions workflow for {{ app_name }}
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DEPLOY_DIR="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$DEPLOY_DIR")"
+
+WORKFLOW_SOURCE="$DEPLOY_DIR/.github/workflows/build-and-deploy.yml"
+WORKFLOW_TARGET="$PROJECT_ROOT/.github/workflows/build-and-deploy.yml"
+
+echo "🔧 Enabling GitHub Actions for {{ app_name }}..."
+echo ""
+
+# Create .github/workflows directory if it doesn't exist
+mkdir -p "$PROJECT_ROOT/.github/workflows"
+
+# Check if workflow already exists
+if [ -f "$WORKFLOW_TARGET" ] || [ -L "$WORKFLOW_TARGET" ]; then
+    echo "⚠️  GitHub Actions workflow already exists at:"
+    echo "   $WORKFLOW_TARGET"
+    echo ""
+    read -p "Do you want to replace it? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "❌ Cancelled"
+        exit 0
+    fi
+    rm -f "$WORKFLOW_TARGET"
+fi
+
+# Choose method: symlink or copy
+echo "Choose how to enable GitHub Actions:"
+echo "  1) Symlink (recommended - stays in sync with .deploy/)"
+echo "  2) Copy (standalone file)"
+echo ""
+read -p "Enter choice (1 or 2): " -n 1 -r
+echo ""
+
+case "$REPLY" in
+    1)
+        # Create symlink
+        ln -s "../../.deploy/.github/workflows/build-and-deploy.yml" "$WORKFLOW_TARGET"
+        echo "✅ Created symlink:"
+        echo "   $WORKFLOW_TARGET -> .deploy/.github/workflows/build-and-deploy.yml"
+        ;;
+    2)
+        # Copy file
+        cp "$WORKFLOW_SOURCE" "$WORKFLOW_TARGET"
+        echo "✅ Copied workflow file to:"
+        echo "   $WORKFLOW_TARGET"
+        ;;
+    *)
+        echo "❌ Invalid choice"
+        exit 1
+        ;;
+esac
+
+echo ""
+echo "🎉 GitHub Actions enabled!"
+echo ""
+echo "📝 Next steps:"
+echo "  1. Configure GitHub Secrets in your repository:"
+echo "     - ALIYUN_REGISTRY_USERNAME"
+echo "     - ALIYUN_REGISTRY_PASSWORD"
+{% if enable_private_repos -%}
+echo "     - GH_TOKEN (for private repos)"
+echo "     - NETRC_LOGIN, NETRC_PASSWORD (for private packages)"
+{% endif -%}
+echo ""
+echo "  2. Commit and push to GitHub:"
+echo "     git add .github/workflows/build-and-deploy.yml"
+echo "     git commit -m 'Enable GitHub Actions CI/CD'"
+echo "     git push"
+echo ""
+echo "  3. Check the Actions tab in your GitHub repository"
+

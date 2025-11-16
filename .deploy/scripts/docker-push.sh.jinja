@@ -1,0 +1,24 @@
+#!/bin/bash
+# Docker push script for {{ app_name }}
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Default values
+REGISTRY="{{ aliyun_registry }}"
+NAMESPACE="{{ aliyun_namespace }}"
+IMAGE_NAME="{{ app_name }}"
+TAG="${TAG:-latest}"
+
+IMAGE_FULL="${REGISTRY}/${NAMESPACE}/${IMAGE_NAME}:${TAG}"
+
+echo "🐳 Pushing Docker image..."
+echo "📦 Image: ${IMAGE_FULL}"
+echo ""
+
+docker push "${IMAGE_FULL}"
+
+echo ""
+echo "✅ Docker image pushed successfully!"
+echo "🚀 Image: ${IMAGE_FULL}"
+

@@ -1,0 +1,39 @@
+# SAE Deployment Configuration
+# This file contains all deployment settings for your application
+
+# Application Settings
+app:
+  name: {{ app_name }}
+  version: {{ go_version }}
+  port: {{ service_port }}
+  health_check: {{ health_check_path }}
+
+# Aliyun Container Registry
+registry:
+  endpoint: {{ aliyun_registry }}
+  namespace: {{ aliyun_namespace }}
+  image_name: {{ app_name }}
+
+# Aliyun SAE Configuration
+sae:
+  region: {{ aliyun_region }}
+  replicas: {{ sae_replicas }}
+  cpu: {{ sae_cpu }}
+  memory: {{ sae_memory }}
+
+# Features
+features:
+  terraform: {{ enable_terraform }}
+  makefile: {{ enable_makefile }}
+  tests: {{ enable_tests }}
+  private_repos: {{ enable_private_repos }}
+
+# Services
+services:
+  database: {{ use_database }}
+  redis: {{ use_redis }}
+
+# Build Settings
+build:
+  docker_base_image: {{ docker_base_image }}
+

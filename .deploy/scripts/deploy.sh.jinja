@@ -1,0 +1,47 @@
+#!/bin/bash
+# Deploy script for {{ app_name }} using Terraform
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DEPLOY_DIR="$(dirname "$SCRIPT_DIR")"
+TERRAFORM_DIR="$DEPLOY_DIR/terraform"
+
+{% if not enable_terraform -%}
+echo "❌ Terraform is not enabled in this project"
+echo "💡 Enable it by running: copier update"
+exit 1
+{% else -%}
+if [ ! -d "$TERRAFORM_DIR" ]; then
+    echo "❌ Terraform directory not found: $TERRAFORM_DIR"
+    exit 1
+fi
+
+cd "$TERRAFORM_DIR"
+
+ACTION="${1:-plan}"
+
+case "$ACTION" in
+    init)
+        echo "🔧 Initializing Terraform..."
+        terraform init
+        ;;
+    plan)
+        echo "📋 Planning Terraform changes..."
+        terraform plan
+        ;;
+    apply)
+        echo "🚀 Applying Terraform changes..."
+        terraform apply
+        ;;
+    destroy)
+        echo "💥 Destroying Terraform resources..."
+        terraform destroy
+        ;;
+    *)
+        echo "❌ Unknown action: $ACTION"
+        echo "Usage: $0 {init|plan|apply|destroy}"
+        exit 1
+        ;;
+esac
+{% endif -%}
+

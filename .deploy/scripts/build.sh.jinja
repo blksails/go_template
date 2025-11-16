@@ -1,0 +1,23 @@
+#!/bin/bash
+# Build script for {{ app_name }}
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DEPLOY_DIR="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$DEPLOY_DIR")"
+
+# Load configuration
+if [ -f "$PROJECT_ROOT/.deploy.yml" ]; then
+    echo "📋 Loading configuration from .deploy.yml"
+else
+    echo "❌ Error: .deploy.yml not found"
+    exit 1
+fi
+
+cd "$PROJECT_ROOT"
+
+echo "🏗️  Building {{ app_name }}..."
+go build -ldflags="-s -w" -o {{ app_name }} .
+
+echo "✅ Build complete: ./{{ app_name }}"
+

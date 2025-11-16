@@ -1,0 +1,6 @@
+# Copier template - files to ignore in template repo
+*.pyc
+__pycache__/
+.DS_Store
+.copier-answers.yml
+
